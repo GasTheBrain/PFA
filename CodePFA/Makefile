@@ -1,7 +1,7 @@
 # Exemple de Makefile envoyé par Nouha (utilisé en Spé)
 
 CC = gcc
-CFLAGS = -Wall -Wextra -lm
+CFLAGS = -Wall -Wextra -lm -Werror
 
 all: integration pfa
 
