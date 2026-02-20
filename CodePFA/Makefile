@@ -1,32 +1,55 @@
 # Exemple de Makefile envoyé par Nouha (utilisé en Spé)
 
-CC = gcc
-CFLAGS = -Wall -Wextra -lm -Werror
+# CC = gcc
+# CFLAGS = -Wall -Wextra -lm -Werror
 
-all: integration pfa
+# all: integration pfa
 
-integration: test_integration.o integration.o
-	$(CC) -o test_integration $^ $(CFLAGS)
+# integration: test_integration.o integration.o
+# 	$(CC) -o test_integration $^ $(CFLAGS)
 
-test_integration.o: test_integration.c integration.h
-	$(CC) -o $@ -c test_integration.c
+# test_integration.o: test_integration.c integration.h
+# 	$(CC) -o $@ -c test_integration.c
 
-integration.o: integration.c integration.h
-	$(CC) -o $@ -c integration.c
-
-
-pfa: test_pfa.o pfa.o integration.o
-	$(CC) -o test_pfa $^ $(CFLAGS)
-
-test_pfa.o: test_pfa.c pfa.h
-	$(CC) -o $@ -c test_pfa.c
-
-pfa.o: pfa.c pfa.h integration.h
-	$(CC) -o $@ -c pfa.c
+# integration.o: integration.c integration.h
+# 	$(CC) -o $@ -c integration.c
 
 
-# .PHONY: clean
+# pfa: test_pfa.o pfa.o integration.o
+# 	$(CC) -o test_pfa $^ $(CFLAGS)
 
-clean:
-	$(RM) $(PROG) $(OBJ)
+# test_pfa.o: test_pfa.c pfa.h
+# 	$(CC) -o $@ -c test_pfa.c
 
+# pfa.o: pfa.c pfa.h integration.h
+# 	$(CC) -o $@ -c pfa.c
+
+
+# # .PHONY: clean
+
+# clean:
+# 	$(RM) $(PROG) $(OBJ)
+
+FLAGS=-Wall -Wextra -fsanitize=address -lm
+CHEMINFUND=Who_robbed_Thibouvre/fundamentals
+CHEMINPROF=Who_robbed_Thibouvre/proficiencies
+# MAIN=test_integration.c
+MAIN=main.c
+MAINFUND=main.exe
+MAINPROF=mainprof.exe
+CC=gcc -g -o
+
+archi_V%:
+	-git add .
+	-git commit -m "$@"
+	-git tag -ma archi-$@
+	-git push --follow-tags
+submit_V%:
+	-git add .
+	-git commit -m "$@"
+	-git tag -ma submit-$@
+	-git push --follow-tags
+main:
+	$(CC) $(MAINFUND) $(FLAGS) $(MAIN)
+	./$(MAINFUND)
+	rm -f $(MAINFUND)

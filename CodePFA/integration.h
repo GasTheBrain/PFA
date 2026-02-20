@@ -21,7 +21,9 @@ typedef struct{
   char name[20]; /* Name of the quadrature formula. */
                  /* (possible value: "left", "right", "middle", "trapezes", "simpson", "gauss2" or "gauss3") */
   /* Add here other paramaters to the structure definition, that you may need for the integral function */
-
+int n;
+double x[3];
+double w[3];
 } QuadFormula;
 
 #ifdef INTEGRATION_C

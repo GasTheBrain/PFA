@@ -4,6 +4,8 @@
 /******************************************************/
 
 #include "integration.h"
+#include "math.h"
+#include "integration.c"
 
 /* Test functions with known integrals */
 
@@ -118,9 +120,9 @@ void test_integrate_dx()
 
 int main()
 {
-    printf("╔════════════════════════════════════════════════════════════╗\n");
-    printf("║     TEST PROGRAM FOR NUMERICAL INTEGRATION METHODS        ║\n");
-    printf("╚════════════════════════════════════════════════════════════╝\n");
+
+    printf("TEST PROGRAM FOR NUMERICAL INTEGRATION METHODS\n");
+
     
     // Test 1: x^2 from 0 to 1
     test_function("f(x) = x^2", f1, 0.0, 1.0, 1.0/3.0);
