@@ -15,8 +15,7 @@
           The number of subdivisions will be N such that (b-a)/N ~ dt
 */
 bool init_integration(char* quadrature, double dt)
-{ 
-  
+{
   pfa_dt=dt;
   return setQuadFormula(&pfaQF,quadrature);
 }
@@ -32,18 +31,19 @@ double phi(double x)
 /* Cumulative distribution function of the normal distribution */
 double PHI(double x)
 {
-  char methode[]="Left";
-  init_integration(methode, 0.1);
+  char methode[]="gauss3";
+  if (init_integration(methode, 0.1)==false)
+  {
+    return 0.0;
+  }
+  
   return 1.0/2.0+integrate_dx(phi, 0, x, pfa_dt, &pfaQF);
 }
 
 /* =====================================
    Finance function: price of an option 
 */
-double densité()
-{
-  return 1
-}
+
 double CALL(double z0,double S0, double K,double mu,double sig, double T)
 {
   return S0*exp(mu*T)*PHI(sig*sqrt(T)-z0)-K*PHI(-1*z0);
@@ -55,6 +55,11 @@ double PUT(double z0,double S0, double K,double mu,double sig, double T)
 }
 double optionPrice(Option* option)
 {
+  if (option==NULL)
+  {
+    return 0.0;
+  }
+  
   double z0=log(option->K/option->S0)-option->T*(option->mu-((option->sig)*(option->sig)/2.0));
   if (option->type==0)
   {
@@ -74,9 +79,22 @@ double optionPrice(Option* option)
 /* Probability density function (PDF) of variable X.
    X is the reimbursement in case of a claim from the client.
 */
+double f(InsuredClient* client, double t)
+{
+  return (1 /(client->s*t))*phi((log(t)-client->m)/client->s);
+}
+double F(InsuredClient* client, double t)
+{
+  return PHI((log(x)-client->m)/client->s);
+}
 double clientPDF_X(InsuredClient* client, double x)
 {
-  
+  if (x <= 0)
+  {
+    return 0.0;
+  }
+  return f(client,x);
+
   
 }
 
@@ -86,7 +104,13 @@ double clientPDF_X(InsuredClient* client, double x)
 */
 double clientCDF_X(InsuredClient* client, double x)
 {
-  return 0.0;
+  if (client==NULL)
+  {
+    return 0.0;
+  }
+  
+
+  return F(client,x);
 }
 
 
@@ -96,7 +120,13 @@ double clientCDF_X(InsuredClient* client, double x)
 */
 double clientPDF_X1X2(InsuredClient* client, double x)
 {
-  return 0.0;
+  if (client==NULL)
+  {
+    return 0.0;
+  }
+  integrate_dx(&fX1X2,0, x,pfa_dt, &(pfaQF));
+  
+  
 }
 
 
@@ -106,6 +136,12 @@ double clientPDF_X1X2(InsuredClient* client, double x)
 */
 double clientCDF_X1X2(InsuredClient* client, double x)
 {
+  if (client==NULL)
+  {
+    /* code */
+  }
+  
+  
   return 0.0;
 }
 
@@ -114,10 +150,14 @@ double clientCDF_X1X2(InsuredClient* client, double x)
 /* Cumulative distribution function (CDF) of variable S.
    Variable S is the sum of the reimbursements that the insurance company will pay to client.
 */
+double integral_sa_mère(double x, )
 double clientCDF_S(InsuredClient* client, double x)
 {
+
   return 0.0;
 }
+
+
 
 
 
