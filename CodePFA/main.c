@@ -2,9 +2,9 @@
 #include <math.h>
 #include "integration.h"
 #include "integration.c"
-double f(double t)
+double f(double x)
 {
-    return sin(t*t);
+    return sin(x*x);
 }
 double erreur(double x, double valeur_exacte)
 {

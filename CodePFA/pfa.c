@@ -16,7 +16,9 @@
 */
 bool init_integration(char* quadrature, double dt)
 { 
-  return true;
+  
+  pfa_dt=dt;
+  return setQuadFormula(&pfaQF,quadrature);
 }
 
 
@@ -30,15 +32,38 @@ double phi(double x)
 /* Cumulative distribution function of the normal distribution */
 double PHI(double x)
 {
-  return 0.0;
+  char methode[]="Left";
+  init_integration(methode, 0.1);
+  return 1.0/2.0+integrate_dx(phi, 0, x, pfa_dt, &pfaQF);
 }
 
 /* =====================================
    Finance function: price of an option 
 */
+double densité()
+{
+  return 1
+}
+double CALL(double z0,double S0, double K,double mu,double sig, double T)
+{
+  return S0*exp(mu*T)*PHI(sig*sqrt(T)-z0)-K*PHI(-1*z0);
+}
+
+double PUT(double z0,double S0, double K,double mu,double sig, double T)
+{
+  return K*PHI(z0)-S0*exp(mu*T)*PHI(z0-sig*sqrt(T));
+}
 double optionPrice(Option* option)
 {
-  return 0.0;
+  double z0=log(option->K/option->S0)-option->T*(option->mu-((option->sig)*(option->sig)/2.0));
+  if (option->type==0)
+  {
+    return CALL(z0, option->S0, option->K, option->mu, option->sig, option->T);
+  }
+  else
+  {
+    return PUT(z0, option->S0, option->K, option->mu, option->sig, option->T);
+  }
 }
 
 
@@ -51,7 +76,8 @@ double optionPrice(Option* option)
 */
 double clientPDF_X(InsuredClient* client, double x)
 {
-  return 0.0;
+  
+  
 }
 
 
