@@ -1,11 +1,11 @@
-/******************************************************/
+&/******************************************************/
 /* Program to run and test the integration functions. */
 /* Creation date: 31 July, 2025                       */
 /******************************************************/
 
 #include "integration.h"
 #include "math.h"
-#include "integration.c"
+
 
 /* Test functions with known integrals */
 

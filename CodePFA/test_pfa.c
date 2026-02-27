@@ -4,7 +4,7 @@
 /******************************************************/
 
 #include "pfa.h"
-
+#include "integration.h"
 void test_normal_distribution()
 {
     printf("╔════════════════════════════════════════════════════════════╗\n");
@@ -43,10 +43,10 @@ void test_option_pricing()
     Option call;
     call.type = CALL;
     call.S0 = 100.0;    // Current price
-    call.K = 100.0;     // Strike price (at the money)
-    call.T = 1.0;       // 1 year expiry
+    call.T = 2.0;       // 1 year expiry
+    call.K = 101.0;     // Strike price (at the money)
     call.mu = 0.05;     // 5% expected return
-    call.sig = 0.2;     // 20% volatility
+    call.sig = 0.02;     // 2% volatility
     
     double call_price = optionPrice(&call);
     printf("CALL Option Pricing:\n");
@@ -67,11 +67,11 @@ void test_option_pricing()
     // Example 3: In-the-money call
     Option call2;
     call2.type = CALL;
-    call2.S0 = 110.0;   // Current price above strike
-    call2.K = 100.0;    // Strike price
-    call2.T = 0.5;      // 6 months
-    call2.mu = 0.08;    // 8% expected return
-    call2.sig = 0.25;   // 25% volatility
+    call2.S0 = 100.0;    // Current price above strike
+    call2.K = 115.0;     // Strike price
+    call2.T = 2.0;       // 6 months
+    call2.mu = 0.05;
+    call2.sig = 0.02;  // 25% volatility
     
     double call2_price = optionPrice(&call2);
     printf("\nIn-the-money CALL Option:\n");
@@ -82,11 +82,11 @@ void test_option_pricing()
     // Example 4: Out-of-the-money put
     Option put2;
     put2.type = PUT;
-    put2.S0 = 110.0;    // Current price above strike
-    put2.K = 100.0;     // Strike price
-    put2.T = 0.5;       // 6 months
-    put2.mu = 0.08;
-    put2.sig = 0.25;
+    put2.S0 = 100.0;    // Current price above strike
+    put2.K = 115.0;     // Strike price
+    put2.T = 2.0;       // 6 months
+    put2.mu = 0.05;
+    put2.sig = 0.02;
     
     double put2_price = optionPrice(&put2);
     printf("\nOut-of-the-money PUT Option:\n");

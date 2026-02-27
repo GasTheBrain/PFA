@@ -22,6 +22,7 @@ bool init_integration(char* quadrature, double dt)
 
 
 
+
 /* Density of the normal distribution */
 double phi(double x)
 {
@@ -43,15 +44,13 @@ double PHI(double x)
 /* =====================================
    Finance function: price of an option 
 */
-
-double CALL(double z0,double S0, double K,double mu,double sig, double T)
+double call(double z0,double S0, double K,double mu,double sig, double T)
 {
   return S0*exp(mu*T)*PHI(sig*sqrt(T)-z0)-K*PHI(-1*z0);
 }
-
-double PUT(double z0,double S0, double K,double mu,double sig, double T)
+double put(double z0,double S0, double K,double mu,double sig, double T)
 {
-  return K*PHI(z0)-S0*exp(mu*T)*PHI(z0-sig*sqrt(T));
+  return K*PHI(z0)-S0* exp(mu*T)*PHI(z0- (sig*sqrt(T)));
 }
 double optionPrice(Option* option)
 {
@@ -60,14 +59,15 @@ double optionPrice(Option* option)
     return 0.0;
   }
   
-  double z0=log(option->K/option->S0)-option->T*(option->mu-((option->sig)*(option->sig)/2.0));
+  double z0=(log(option->K/option->S0)-option->T*(option->mu-((option->sig)*(option->sig)/2.0)))/(option->sig*sqrt(option->T));
+  printf("z0 = %.5f\n", z0);
   if (option->type==0)
   {
-    return CALL(z0, option->S0, option->K, option->mu, option->sig, option->T);
+    return call(z0, option->S0, option->K, option->mu, option->sig, option->T);
   }
   else
   {
-    return PUT(z0, option->S0, option->K, option->mu, option->sig, option->T);
+    return put(z0, option->S0, option->K, option->mu, option->sig, option->T);
   }
 }
 
@@ -79,13 +79,13 @@ double optionPrice(Option* option)
 /* Probability density function (PDF) of variable X.
    X is the reimbursement in case of a claim from the client.
 */
-double f(InsuredClient* client, double t)
+double fXx(InsuredClient* client, double t)
 {
   return (1 /(client->s*t))*phi((log(t)-client->m)/client->s);
 }
-double F(InsuredClient* client, double t)
+double FXx(InsuredClient* client, double t)
 {
-  return PHI((log(x)-client->m)/client->s);
+  return PHI((log(t)-client->m)/client->s);
 }
 double clientPDF_X(InsuredClient* client, double x)
 {
@@ -93,7 +93,7 @@ double clientPDF_X(InsuredClient* client, double x)
   {
     return 0.0;
   }
-  return f(client,x);
+  return fXx(client,x);
 
   
 }
@@ -110,9 +110,50 @@ double clientCDF_X(InsuredClient* client, double x)
   }
   
 
-  return F(client,x);
+  return FXx(client,x);
 }
 
+
+/* ==========================================================*/
+/* Distribution of X1+X2 : static intermediate functions     */
+
+/* The static functions localProductPDF and localPDF_X1X2 take only one
+   argument, of type double.
+   They hence can be integrated: function integrate_dx takes as argument a function pointer f, 
+   where f depends only on one argument (double t).
+   The static functions below can be given as argument to integrate_dx.
+
+   That's why we copy other variables of the final functions (client and x) to local static variables, 
+   and define these static functions depending on only one argument (double t).
+   These local functions can hence be arguments of integrate_dx.
+*/
+static InsuredClient* localClient;
+static double localX;
+
+
+/* This function assumes that static variables localClient and localX have been set.
+   It can be an argument of integrate_dx (since it has the good signature)
+*/
+static double localProductPDF(double t)
+{
+  return clientPDF_X(localClient, localX - t) * clientPDF_X(localClient, t);
+}
+
+/* Density of X1+X2
+
+   This function assumes that static variable localClient has been set.
+   It is called by clientPDF_X1X2
+   It can also be an argument of integrate_dx (since it has the good signature)
+*/
+static double localPDF_X1X2(double x)
+{
+  localX = x;
+  return 0.0;
+} 
+
+
+/* ==========================================================*/
+/* Distribution of X1+X2 : the final functions               */
 
 /* Probability density function (PDF) of variable X1+X2.
    X1 and X2 are the reimbursements of the two claims from the client (assuming there are 
@@ -120,13 +161,11 @@ double clientCDF_X(InsuredClient* client, double x)
 */
 double clientPDF_X1X2(InsuredClient* client, double x)
 {
-  if (client==NULL)
-  {
-    return 0.0;
-  }
-  integrate_dx(&fX1X2,0, x,pfa_dt, &(pfaQF));
-  
-  
+  if ( x<=0 ) return 0.0;
+
+  localClient = client;
+  localPDF_X1X2(x);
+  return integrate_dx(&localProductPDF,0 ,localX, pfa_dt, &pfaQF);
 }
 
 
@@ -136,13 +175,12 @@ double clientPDF_X1X2(InsuredClient* client, double x)
 */
 double clientCDF_X1X2(InsuredClient* client, double x)
 {
-  if (client==NULL)
-  {
-    /* code */
-  }
-  
-  
-  return 0.0;
+    if ( x<=0 ) return 0.0;
+    
+  localClient = client;
+  localPDF_X1X2(x);
+
+  return integrate_dx(clientCDF_X1X2,0 ,localX, pfa_dt, &pfaQF);
 }
 
 
@@ -150,15 +188,11 @@ double clientCDF_X1X2(InsuredClient* client, double x)
 /* Cumulative distribution function (CDF) of variable S.
    Variable S is the sum of the reimbursements that the insurance company will pay to client.
 */
-double integral_sa_mère(double x, )
 double clientCDF_S(InsuredClient* client, double x)
 {
-
-  return 0.0;
+    if ( x<=0 ) return 0.0;
+  return client->p[0]+client->p[1]*clientCDF_X(client, x)+client->p[2]*clientCDF_X1X2(client,x);
 }
-
-
-
 
 
 

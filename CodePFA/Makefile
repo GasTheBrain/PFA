@@ -34,7 +34,7 @@ FLAGS=-Wall -Wextra -fsanitize=address -lm
 CHEMINFUND=Who_robbed_Thibouvre/fundamentals
 CHEMINPROF=Who_robbed_Thibouvre/proficiencies
 # MAIN=test_integration.c
-MAIN=main.c
+MAIN=main.c integration.h integration.c pfa.h pfa2.c
 MAINFUND=main.exe
 MAINPROF=mainprof.exe
 CC=gcc -g -o
