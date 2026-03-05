@@ -3,7 +3,7 @@
 // #define GRAPHIC
 
 #define PFA_C
-
+#include "integration.h"
 #include "pfa.h"
 
 /* Initialize the integration variables.
@@ -32,13 +32,7 @@ double phi(double x)
 /* Cumulative distribution function of the normal distribution */
 double PHI(double x)
 {
-  char methode[]="gauss3";
-  if (init_integration(methode, 0.1)==false)
-  {
-    return 0.0;
-  }
-  
-  return 1.0/2.0+integrate_dx(phi, 0, x, pfa_dt, &pfaQF);
+  return (1.0/2.0)+integrate_dx(phi, 0, x, pfa_dt, &pfaQF);
 }
 
 /* =====================================
@@ -58,9 +52,8 @@ double optionPrice(Option* option)
   {
     return 0.0;
   }
-  
   double z0=(log(option->K/option->S0)-option->T*(option->mu-((option->sig)*(option->sig)/2.0)))/(option->sig*sqrt(option->T));
-  printf("z0 = %.5f\n", z0);
+  // printf("z0 = %.5f\n", z0);
   if (option->type==0)
   {
     return call(z0, option->S0, option->K, option->mu, option->sig, option->T);
@@ -79,23 +72,21 @@ double optionPrice(Option* option)
 /* Probability density function (PDF) of variable X.
    X is the reimbursement in case of a claim from the client.
 */
-double fXx(InsuredClient* client, double t)
-{
-  return (1 /(client->s*t))*phi((log(t)-client->m)/client->s);
-}
-double FXx(InsuredClient* client, double t)
-{
-  return PHI((log(t)-client->m)/client->s);
-}
+// double fXx(InsuredClient* client, double t)
+// {
+//   return 
+// }
+// double FXx(InsuredClient* client, double t)
+// {
+//   return PHI((log(t)-client->m)/client->s);
+// }
 double clientPDF_X(InsuredClient* client, double x)
 {
-  if (x <= 0)
+  if (x <= 0 || client==NULL)
   {
     return 0.0;
   }
-  return fXx(client,x);
-
-  
+  return (1.0/(client->s*x))*phi((log(x)-client->m)/client->s);;
 }
 
 
@@ -104,15 +95,12 @@ double clientPDF_X(InsuredClient* client, double x)
 */
 double clientCDF_X(InsuredClient* client, double x)
 {
-  if (client==NULL)
+  if (x <=0 || client==NULL)
   {
     return 0.0;
   }
-  
-
-  return FXx(client,x);
+  return PHI((log(x)-client->m)/client->s);
 }
-
 
 /* ==========================================================*/
 /* Distribution of X1+X2 : static intermediate functions     */
@@ -147,9 +135,13 @@ static double localProductPDF(double t)
 */
 static double localPDF_X1X2(double x)
 {
-  localX = x;
-  return 0.0;
-} 
+  if (x <= 0.0)
+  {
+    return 0.0;
+  }
+  localX=x;   
+  return integrate_dx(localProductPDF, 0, x, pfa_dt, &pfaQF);
+}
 
 
 /* ==========================================================*/
@@ -164,8 +156,7 @@ double clientPDF_X1X2(InsuredClient* client, double x)
   if ( x<=0 ) return 0.0;
 
   localClient = client;
-  localPDF_X1X2(x);
-  return integrate_dx(&localProductPDF,0 ,localX, pfa_dt, &pfaQF);
+  return localPDF_X1X2(x);
 }
 
 
@@ -178,9 +169,7 @@ double clientCDF_X1X2(InsuredClient* client, double x)
     if ( x<=0 ) return 0.0;
     
   localClient = client;
-  localPDF_X1X2(x);
-
-  return integrate_dx(clientCDF_X1X2,0 ,localX, pfa_dt, &pfaQF);
+  return integrate_dx(localPDF_X1X2, 0, x, pfa_dt, &pfaQF);
 }
 
 
