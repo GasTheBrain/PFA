@@ -100,9 +100,10 @@ void test_options(void)
 
   /* --- Cas 1 : S0=100, K=100, T=1, mu=0, sig=0.2 ---
      z0 = (ln(100/100) - 1*(0 - 0.04/2)) / (0.2*1) = 0.02/0.2 = 0.1000
-     Call = 100*PHI(0.2-0.1) - 100*PHI(-0.1)
-          = 100*PHI(0.1)  - 100*PHI(-0.1)  = 7.965567
-     Put  = 100*PHI(0.1)  - 100*PHI(-0.1)  = 7.965567  (égaux car mu=0, K=S0) */
+     Call = S0*e^(mu*T)*PHI(sig*sqrt(T)-z0) - K*PHI(-z0)
+          = 100*PHI(0.1) - 100*PHI(-0.1) = 7.965567
+     Put  = K*PHI(z0) - S0*e^(mu*T)*PHI(z0-sig*sqrt(T))
+          = 100*PHI(0.1) - 100*PHI(-0.1) = 7.965567  (égaux car mu=0, K=S0) */
   {
     Option opt = { CALL, 100.0, 100.0, 1.0, 0.0, 0.2 };
     double c = optionPrice(&opt);
@@ -163,7 +164,15 @@ void test_options(void)
    Valeurs exactes :
      fX(x) = phi((ln(x)-m)/s) / (s*x)   — formule fermée
      FX(x) = PHI((ln(x)-m)/s)            — formule fermée
-   Calculées avec les vraies valeurs de PHI (table N(0,1)).
+   Calculées avec les vraies valeurs de PHI.
+
+   Pour m=7, s=1.5 :
+     x=1000 : z=(ln(1000)-7)/1.5 = (6.9078-7)/1.5 = -0.06148
+              fX(1000) = phi(-0.06148)/1500 = 0.00026546
+              FX(1000) = PHI(-0.06148)      = 0.47548191
+     x=5000 : z=(ln(5000)-7)/1.5 = (8.5172-7)/1.5 =  1.01160
+              fX(5000) = phi(1.01160)/7500  = 0.00003189
+              FX(5000) = PHI(1.01160)       = 0.84410235
    ==================================================== */
 void test_loi_X(void)
 {
@@ -182,15 +191,14 @@ void test_loi_X(void)
   printf("  Médiane de X = e^m = e^7 = %.4f\n\n", exp(client.m));
 
   /* --- clientPDF_X ---
-     Valeurs exactes : fX(x) = phi((ln(x)-7)/1.5) / (1.5*x)
-     x=1000 : z=(6.9078-7)/1.5=-0.0615  => phi(-0.0615)/1500 = 0.00026546
-     x=5000 : z=(8.5172-7)/1.5=1.0115   => phi(1.0115) /7500 = 0.00003189  */
+     x=1000 : z=(ln(1000)-7)/1.5=-0.06148  => phi(-0.06148)/1500 = 0.00026546
+     x=5000 : z=(ln(5000)-7)/1.5= 1.01160  => phi(1.01160) /7500 = 0.00003189  */
   printf("  clientPDF_X — fX(x) = phi((ln(x)-7)/1.5) / (1.5*x)\n");
   ligne();
   struct { double x; double exact; } cas_pdf[] = {
-    {    0.0, 0.00000000 },                /* x<=0 => 0 par définition */
-    { 100.0, 0.00026546 },                /* phi(-0.0615)/1500        */
-    { 500.0, 0.00003189 },                /* phi(1.0115) /7500        */
+    {    0.0, 0.00000000 },   /* x<=0 => 0 par définition */
+    { 1000.0, 0.00026546 },   /* phi(-0.06148)/1500       */
+    { 5000.0, 0.00003189 },   /* phi( 1.01160)/7500       */
   };
   for (int i = 0; i < 3; i++)
   {
@@ -200,15 +208,14 @@ void test_loi_X(void)
   }
 
   /* --- clientCDF_X ---
-     Valeurs exactes : FX(x) = PHI((ln(x)-7)/1.5)
      x=1000 : PHI(-0.06148) = 0.47548191
      x=5000 : PHI( 1.01160) = 0.84410235  */
   printf("\n  clientCDF_X — FX(x) = PHI((ln(x)-7)/1.5)\n");
   ligne();
   struct { double x; double exact; } cas_cdf[] = {
     {    0.0, 0.00000000 },
-    { 100.0, 0.47548191 },                /* PHI(-0.06148) */
-    { 500.0, 0.84410235 },                /* PHI( 1.01160) */
+    { 1000.0, 0.47548191 },   /* PHI(-0.06148) */
+    { 5000.0, 0.84410235 },   /* PHI( 1.01160) */
   };
   for (int i = 0; i < 3; i++)
   {
@@ -222,6 +229,10 @@ void test_loi_X(void)
    TEST 4 : loi de X1+X2 (convolution, m=7, s=1.5)
    Valeurs exactes calculées par intégration numérique
    haute précision (scipy, limit=200, erreur < 1e-8).
+
+   Pour m=7, s=1.5 :
+     x=1000 : fX1+X2(1000) = 0.00020807  (scipy quad, limit=200)
+              FX1+X2(1000) = 0.14962520  (scipy quad, limit=200)
    ==================================================== */
 void test_loi_X1X2(void)
 {
@@ -236,38 +247,38 @@ void test_loi_X1X2(void)
   double probs[3] = {0.7, 0.25, 0.05};
   client.p = probs;
 
-  /* --- clientPDF_X1X2(2000) ---
+  /* --- clientPDF_X1X2(1000) ---
      fX1+X2(x) = intégrale_0^x fX(t)*fX(x-t) dt
-     Exact (scipy quad, limit=200, erreur~7.8e-9) : 0.00016072  */
+     Exact (scipy quad, limit=200) : 0.00020807  */
   printf("  clientPDF_X1X2(x) — convolution : intégrale_0^x fX(t)*fX(x-t) dt\n");
   printf("  %-10s  %-18s  %-18s  %-12s\n", "x", "valeur calculée", "valeur exacte (scipy)", "erreur");
   printf("  %s\n", "-------------------------------------------------------------------");
   {
-    double x = 200.0;
+    double x = 1000.0;
     printf("  Calcul en cours pour x=%.0f...\n", x);
     double calc  = clientPDF_X1X2(&client, x);
-    double exact = 0.00016072;              /* scipy quad, limit=200, err~7.8e-9 */
+    double exact = 0.00020807;   /* scipy quad, limit=200 */
     printf("  %-10.1f  %-18.8f  %-18.8f  %.2e\n\n", x, calc, exact, fabs(calc - exact));
   }
 
-  /* --- clientCDF_X1X2(2000) ---
+  /* --- clientCDF_X1X2(1000) ---
      FX1+X2(x) = intégrale_0^x fX1+X2(t) dt
-     Exact (scipy quad, limit=50, erreur~1.2e-8) : 0.33625964  */
+     Exact (scipy quad, limit=200) : 0.14962520  */
   printf("  clientCDF_X1X2(x) — intégrale de la densité de convolution\n");
   printf("  %-10s  %-18s  %-18s  %-12s\n", "x", "valeur calculée", "valeur exacte (scipy)", "erreur");
   printf("  %s\n", "-------------------------------------------------------------------");
   {
-    double x = 200.0;
+    double x = 1000.0;
     printf("  Calcul en cours pour x=%.0f...\n", x);
     double calc  = clientCDF_X1X2(&client, x);
-    double exact = 0.33625964;              /* scipy quad, limit=50,  err~1.2e-8 */
+    double exact = 0.14962520;   /* scipy quad, limit=200 */
     printf("  %-10.1f  %-18.8f  %-18.8f  %.2e\n\n", x, calc, exact, fabs(calc - exact));
   }
 
   /* cohérence : FX(x) > FX1+X2(x) pour tout x > 0 */
   printf("  Cohérence : FX(x) > FX1+X2(x) pour tout x > 0\n");
   printf("  (X1+X2 est stochastiquement plus grand que X seul)\n");
-  double x_test   = 200.0;
+  double x_test   = 1000.0;
   double cdf_X    = clientCDF_X(&client, x_test);
   double cdf_X1X2 = clientCDF_X1X2(&client, x_test);
   printf("  FX(%.0f)    = %.8f\n", x_test, cdf_X);
@@ -278,13 +289,15 @@ void test_loi_X1X2(void)
 /* ====================================================
    TEST 5 : loi de S (total des remboursements)
    p0=0.7, p1=0.25, p2=0.05, m=7, s=1.5
+
    Valeurs exactes :
      FS(0)    = p0 = 0.70000000                 (formule directe)
      FS(1000) = p0 + p1*FX(1000) + p2*FX1X2(1000)
-              = 0.7 + 0.25*0.47548191 + 0.05*FX1X2(1000)
-              = 0.82635174  (scipy, erreur < 1e-8)
-     FS(5000) = 0.7 + 0.25*0.84410235 + 0.05*FX1X2(5000)
-              = 0.94332162  (scipy, erreur < 1e-8)
+              = 0.7 + 0.25*0.47548191 + 0.05*0.14962520
+              = 0.82635174  (scipy)
+     FS(5000) = p0 + p1*FX(5000) + p2*FX1X2(5000)
+              = 0.7 + 0.25*0.84410235 + 0.05*0.64592068
+              = 0.94332162  (scipy)
    ==================================================== */
 void test_loi_S(void)
 {
@@ -301,11 +314,11 @@ void test_loi_S(void)
 
   printf("  Paramètres : m=7, s=1.5  |  p[0]=0.70  p[1]=0.25  p[2]=0.05\n\n");
 
-  /* x < 0 */
+  /* x < 0 : doit retourner 0 */
   double cdf_neg = clientCDF_S(&client, -1.0);
   printf("  FS(-1) = %.8f  (exact : 0.00000000)\n", cdf_neg);
 
-  /* x = 0 : doit renvoyer p0 */
+  /* x = 0 : doit retourner p0 = 0.70 */
   double cdf0 = clientCDF_S(&client, 0.0);
   printf("  FS(0)  = %.8f  (exact : 0.70000000 = p[0])\n\n", cdf0);
 
@@ -314,8 +327,8 @@ void test_loi_S(void)
   printf("  %s\n", "-------------------------------------------------------------------");
 
   struct { double x; double exact; } cas_S[] = {
-    { 100.0, 0.82635174 },    /* 0.7 + 0.25*0.47548191 + 0.05*FX1X2(1000) */
-    { 500.0, 0.94332162 },    /* 0.7 + 0.25*0.84410235 + 0.05*FX1X2(5000) */
+    { 1000.0, 0.82635174 },  /* 0.7 + 0.25*0.47548191 + 0.05*0.14962520 */
+    { 5000.0, 0.94332162 },  /* 0.7 + 0.25*0.84410235 + 0.05*0.64592068 */
   };
   for (int i = 0; i < 2; i++)
   {
@@ -329,7 +342,7 @@ void test_loi_S(void)
   /* FS doit être croissante */
   printf("\n  FS est croissante : ");
   double prev = 0.0;
-  double pts[] = {10.0, 50.0, 100.0, 500.0};
+  double pts[] = {100.0, 500.0, 1000.0, 5000.0};
   bool ok = true;
   for (int i = 0; i < 4; i++)
   {
@@ -349,24 +362,22 @@ int main(void)
   printf("║          TESTS — FINANCE ET ASSURANCE (PFA)                  ║\n");
   printf("╚══════════════════════════════════════════════════════════════╝\n\n");
 
-  /* simpson + dt=0.1 : bon compromis précision/vitesse pour la démo.
-     Passer à dt=0.05 pour gagner un ordre de grandeur en précision
-     sur PHI et clientCDF_X, au prix d'un calcul plus long sur X1+X2. */
-  if (!init_integration("simpson", 0.1))
+  /* gauss3 + dt=0.1 : bon compromis précision/vitesse pour les tests 1-3. */
+  if (!init_integration("gauss3", 0.1))
   {
     printf("ERREUR : init_integration a échoué\n");
     return 1;
   }
-  printf("  Intégration : simpson, dt=0.1\n\n");
+  printf("  Intégration : gauss3, dt=0.1\n\n");
 
   test_loi_normale();
   test_options();
   test_loi_X();
 
-  /* Pour les tests 4 et 5 (double intégration sur [0, 2000]),
+  /* Pour les tests 4 et 5 (double intégration sur [0, 1000] ou [0, 5000]),
      on augmente dt pour rester dans un temps raisonnable.
-     dt=5.0 => ~400 subdivisions sur [0,2000] : précision correcte. */
-  if (!init_integration("simpson", 5.0))
+     dt=5.0 => ~200 subdivisions sur [0,1000] : précision correcte. */
+  if (!init_integration("gauss3", 5.0))
   {
     printf("ERREUR : init_integration a échoué\n");
     return 1;

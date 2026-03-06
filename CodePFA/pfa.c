@@ -179,7 +179,14 @@ double clientCDF_X1X2(InsuredClient* client, double x)
 */
 double clientCDF_S(InsuredClient* client, double x)
 {
-    if ( x<=0 ) return 0.0;
+  if ( x<=0 )
+  {
+    return 0.0;
+  }
+  if (x==0.0)
+  {
+    return client->p[0]; 
+  }
   return client->p[0]+client->p[1]*clientCDF_X(client, x)+client->p[2]*clientCDF_X1X2(client,x);
 }
 
